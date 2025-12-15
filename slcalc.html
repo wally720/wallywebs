@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stop Loss Desk</title>
+<style>
+  :root{
+    color-scheme: dark;
+
+    --bg: #070A0F;
+    --panel: rgba(16, 22, 32, 0.72);
+    --panel2: rgba(13, 18, 27, 0.72);
+    --stroke: rgba(90, 116, 150, 0.22);
+    --stroke2: rgba(90, 116, 150, 0.14);
+
+    --text: #E8EEF6;
+    --muted: #A6B2C2;
+    --muted2:#7F8CA0;
+
+    --brand: #60A5FA;
+    --brand2:#3B82F6;
+
+    --good:#22C55E;
+    --bad:#EF4444;
+
+    --shadow: 0 18px 60px rgba(0,0,0,.55);
+    --radius: 18px;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 700px at 40% -10%, rgba(59,130,246,.18), transparent 55%),
+      radial-gradient(900px 600px at 90% 10%, rgba(34,197,94,.10), transparent 50%),
+      radial-gradient(900px 700px at 10% 20%, rgba(239,68,68,.08), transparent 52%),
+      var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    letter-spacing: .2px;
+  }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 26px auto;
+    padding: 0 18px 28px;
+  }
+
+  /* Header */
+  .header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .titleBlock h1{
+    font-size: 20px;
+    margin:0;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  .titleBlock p{
+    margin:6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .statusRow{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content:flex-end;
+  }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding: 8px 10px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: rgba(255,255,255,.03);
+    font-size: 12px;
+    color: var(--muted);
+    backdrop-filter: blur(10px);
+  }
+  .dot{
+    width:8px; height:8px; border-radius:999px;
+    background: var(--muted2);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.04);
+  }
+  .dot.live{ background: var(--good); }
+  .dot.off{ background: var(--bad); }
+
+  /* Main card */
+  .card{
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    backdrop-filter: blur(14px);
+  }
+
+  .cardInner{
+    padding: 16px;
+  }
+
+  /* Sections */
+  .sectionTitle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+    margin: 2px 0 10px;
+  }
+  .sectionTitle h2{
+    font-size: 12px;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin:0;
+  }
+  .divider{
+    height:1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+    margin: 14px 0;
+  }
+
+  /* Form grid */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 12px;
+    align-items:end;
+  }
+
+  .col-2{ grid-column: span 2; }
+  .col-3{ grid-column: span 3; }
+  .col-4{ grid-column: span 4; }
+  .col-5{ grid-column: span 5; }
+  .col-6{ grid-column: span 6; }
+
+  @media (max-width: 980px){
+    .col-2, .col-3, .col-4, .col-5, .col-6 { grid-column: span 12; }
+    .header{ align-items:flex-start; flex-direction:column; }
+    .statusRow{ justify-content:flex-start; }
+  }
+
+  label{
+    display:block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  input, select{
+    width:100%;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--stroke);
+    background: rgba(7,10,15,.55);
+    color: var(--text);
+    outline:none;
+  }
+
+  input::placeholder{ color: rgba(166,178,194,.55); }
+
+  input:focus, select:focus{
+    border-color: rgba(96,165,250,.55);
+    box-shadow: 0 0 0 4px rgba(96,165,250,.15);
+  }
+
+  .inline{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items:end;
+  }
+
+  /* Buttons */
+  .actions{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .btn{
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-weight: 800;
+    cursor:pointer;
+    background: rgba(255,255,255,.03);
+    color: var(--text);
+  }
+  .btn:hover{ border-color: rgba(96,165,250,.35); }
+
+  .btnPrimary{
+    background: linear-gradient(180deg, rgba(59,130,246,.90), rgba(37,99,235,.80));
+    border-color: rgba(96,165,250,.55);
+  }
+  .btnPrimary:hover{
+    filter: brightness(1.05);
+  }
+
+  .btnGhost{
+    background: rgba(255,255,255,.02);
+  }
+
+  /* Two columns area */
+  .split{
+    display:grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  @media (max-width: 980px){
+    .split{ grid-template-columns: 1fr; }
+  }
+
+  .box{
+    border: 1px solid var(--stroke2);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,.02);
+    padding: 14px;
+  }
+
+  .boxHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .boxHeader .label{
+    font-size: 12px;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 900;
+  }
+
+  /* Quick results */
+  .meta{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .pill{
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(255,255,255,.03);
+  }
+  .value{
+    display:flex;
+    justify-content:space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .value .k{
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    margin-bottom: 6px;
+  }
+  .value .v{
+    font-size: 22px;
+    font-weight: 900;
+  }
+  .good{ color: var(--good); }
+  .bad{ color: var(--bad); }
+
+  .subline{
+    display:flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .hint{
+    margin-top: 12px;
+    color: var(--muted2);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* Table */
+  .tableWrap{
+    border: 1px solid var(--stroke2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th{
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: rgba(10, 14, 20, .92);
+    backdrop-filter: blur(8px);
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .65px;
+    padding: 10px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--stroke2);
+  }
+  th:first-child, td:first-child{ text-align:left; }
+  tbody td{
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(90,116,150,.12);
+    text-align:right;
+  }
+  tbody tr:hover{
+    background: rgba(255,255,255,.03);
+  }
+
+  .tLong{ color: var(--good); font-weight: 900; }
+  .tShort{ color: var(--bad); font-weight: 900; }
+
+  /* Small utilities */
+  .mono{ font-variant-numeric: tabular-nums; }
+
+  /* Inputs compactos para parámetros */
+.input-compact{
+  width: 110px;
+  max-width: 110px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+/* Contenedor compacto para SL inicial / incremento / filas */
+.params{
+  display:flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.params > div{ min-width: 0; }
+
+.appTitle{
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    #e8eef6 0%,
+    #9ecbff 40%,
+    #e8eef6 80%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.appSubtitle{
+  margin-top: 6px;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+  <div class="titleBlock">
+    <h1 class="appTitle">Stop Loss Desk</h1>
+    <p class="appSubtitle">
+      Calculadora de riesgo para posiciones <strong>Long</strong> y <strong>Short</strong>.
+      Convierte riesgo USD en SL% y genera escenarios.
+    </p>
+  </div>
+</div>
+
+
+  <!-- CARD PRINCIPAL -->
+  <div class="card">
+    <div class="cardInner">
+
+      <!-- INPUTS -->
+      <div class="sectionTitle">
+        <h2>Configuración de la posición</h2>
+      </div>
+
+      <div class="grid">
+
+        <div class="col-1">
+          <label>Dirección</label>
+          <select id="side">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+        </div>
+
+        <div class="col-4">
+          <label>Precio</label>
+          <div class="inline">
+            <input id="symbol" placeholder="BTC" style="max-width:60px"/>
+            <input id="price" placeholder="Precio USDT" style="max-width:150px" value="1"/>
+            <button id="loadPriceBtn" class="btn">Cargar</button>
+          </div>
+        </div>
+
+        <div class="col-2">
+          <label>Valor posición (USD)</label>
+          <input id="positionValue" value="5000" />
+        </div>
+
+        <div class="col-2">
+          <label>Modo de cálculo</label>
+          <select id="mode">
+            <option value="sl">Ingresar SL%</option>
+            <option value="risk">Ingresar riesgo USD</option>
+          </select>
+        </div>
+
+        <div id="slBox" class="col-2">
+          <label>SL %</label>
+          <input id="slPct" value="0.10" />
+        </div>
+
+        <div id="riskBox" class="col-2" style="display:none;">
+          <label>Riesgo máx. (USD)</label>
+          <input id="riskUsd" value="8" />
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button id="calcBtn" class="btn btnPrimary">Calcular</button>
+        <button id="resetBtn" class="btn btnGhost">Reset</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- RESULTADOS + TABLA -->
+      <div class="split">
+
+        <!-- RESULTADO -->
+        <div class="box">
+          <div class="boxHeader">
+            <div class="label">Resultado rápido</div>
+          </div>
+
+          <div class="meta" id="quickMeta"></div>
+
+          <div class="value">
+            <div>
+              <div class="k">Stop Price (LONG)</div>
+              <div class="v good" id="stopPriceLong">$ 0,00</div>
+            </div>
+            <div>
+              <div class="k">Stop Price (SHORT)</div>
+              <div class="v bad" id="stopPriceShort">$ 0,00</div>
+            </div>
+            <div>
+              <div class="k">Pérdida</div>
+              <div class="v bad" id="lossUsd">$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="subline">
+            <div>SL: <strong id="slShow">0%</strong></div>
+            <div>Cantidad: <strong id="qtyShow">0</strong></div>
+          </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="box">
+          <div class="boxHeader">
+            <div class="label">Escenarios de Stop Loss</div>
+          </div>
+
+          <div class="params">
+            <div>
+              <label>SL inicial %</label>
+              <input id="slStartPct" value="0.10" class="input-compact"/>
+            </div>
+            <div>
+              <label>Incremento %</label>
+              <input id="slStepPct" value="0.01" class="input-compact"/>
+            </div>
+            <div>
+              <label>Filas</label>
+              <input id="rows" value="11" class="input-compact"/>
+            </div>
+          </div>
+
+          <div class="tableWrap" style="margin-top:10px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>SL</th>
+                  <th>Valor (USD)</th>
+                  <th id="thStop">Stop Price (LONG)</th>
+                  <th id="thOpp">Stop Price (SHORT)</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // Acepta "89.446,80" o "89446.80"
+  function parseLocaleNumber(str) {
+    if (str == null) return NaN;
+    let s = String(str).trim();
+    if (!s) return NaN;
+
+    if (s.includes(',')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+    return Number(s);
+  }
+
+  const moneyFmt = new Intl.NumberFormat('es-CO', {
+    style: 'currency', currency: 'USD',
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+
+  const priceFmt = new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+
+  const pctFmt = new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+
+  const qtyFmt = new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 0, maximumFractionDigits: 8
+  });
+
+  function computeStopLong(price, sl) {
+    return price * (1 - sl);
+  }
+
+  function computeStopShort(price, sl) {
+    return price * (1 + sl);
+  }
+
+function refreshModeUI() {
+    const mode = document.getElementById('mode').value;
+    document.getElementById('slBox').style.display = (mode === 'sl') ? '' : 'none';
+    document.getElementById('riskBox').style.display = (mode === 'risk') ? '' : 'none';
+  }
+
+  function buildAll() {
+    const side = document.getElementById('side').value;
+    const mode = document.getElementById('mode').value;
+
+    const price = parseLocaleNumber(document.getElementById('price').value);
+    const positionValue = parseLocaleNumber(document.getElementById('positionValue').value);
+
+    if (![price, positionValue].every(n => Number.isFinite(n) && n > 0)) {
+      alert('Revisa: Precio y Valor posición deben ser numéricos y mayores a 0.');
+      return;
+    }
+
+    let sl; // decimal (0.001 = 0.10%)
+    if (mode === 'sl') {
+      const slPct = parseLocaleNumber(document.getElementById('slPct').value);
+      if (!Number.isFinite(slPct) || slPct <= 0) {
+        alert('Revisa: SL% debe ser numérico y mayor a 0.');
+        return;
+      }
+      sl = slPct / 100;
+    } else {
+      const riskUsd = parseLocaleNumber(document.getElementById('riskUsd').value);
+      if (!Number.isFinite(riskUsd) || riskUsd <= 0) {
+        alert('Revisa: Riesgo USD debe ser numérico y mayor a 0.');
+        return;
+      }
+      sl = riskUsd / positionValue;
+      // reflejamos el SL calculado en el input de SL% para transparencia
+      document.getElementById('slPct').value = (sl * 100).toFixed(4);
+    }
+
+    const lossUsd = positionValue * sl;
+    const qty = positionValue / price;
+    const stopLong = computeStopLong(price, sl);
+    const stopShort = computeStopShort(price, sl);
+
+    document.getElementById('stopPriceLong').textContent = `$ ${priceFmt.format(stopLong)}`;
+    document.getElementById('stopPriceShort').textContent = `$ ${priceFmt.format(stopShort)}`;
+    document.getElementById('lossUsd').textContent = moneyFmt.format(lossUsd);
+    document.getElementById('slShow').textContent = `${pctFmt.format(sl * 100)}%`;
+    document.getElementById('qtyShow').textContent = qtyFmt.format(qty);
+
+    const quickMeta = document.getElementById('quickMeta');
+    quickMeta.innerHTML = `
+      <div class="pill"><strong>Dirección:</strong> ${side.toUpperCase()}</div>
+      <div class="pill"><strong>Precio:</strong> $ ${priceFmt.format(price)}</div>
+      <div class="pill"><strong>Posición:</strong> ${moneyFmt.format(positionValue)}</div>
+      <div class="pill"><strong>Modo:</strong> ${mode === 'sl' ? 'SL%' : 'Riesgo USD'}</div>
+    `;
+
+    // Construcción de tabla de escenarios
+    const slStartPct = parseLocaleNumber(document.getElementById('slStartPct').value);
+    const slStepPct = parseLocaleNumber(document.getElementById('slStepPct').value);
+    const rows = Math.max(1, parseInt(document.getElementById('rows').value || '1', 10));
+
+    if (![slStartPct, slStepPct].every(n => Number.isFinite(n) && n > 0)) {
+      alert('Revisa: SL inicial e incremento deben ser numéricos y mayores a 0.');
+      return;
+    }
+
+    const slStart = slStartPct / 100;
+    const slStep = slStepPct / 100;
+
+    const thStop = document.getElementById('thStop');
+    const thOpp  = document.getElementById('thOpp');
+
+    thStop.textContent = `Stop Price (LONG)`;
+    thOpp.textContent  = `Stop Price (SHORT)`;
+const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+
+    for (let i = 0; i < rows; i++) {
+      const sli = slStart + (slStep * i);
+      const lossI = positionValue * sli;
+
+      const stopI = computeStopLong(price, sli);
+      const oppI  = computeStopShort(price, sli);
+const tr = document.createElement('tr');
+
+      const tdSL = document.createElement('td');
+      tdSL.style.textAlign = 'left';
+      tdSL.textContent = `${pctFmt.format(sli * 100)}%`;
+
+      const tdLoss = document.createElement('td');
+      tdLoss.textContent = moneyFmt.format(lossI);
+
+      const tdStop = document.createElement('td');
+      tdStop.className = 'tLong';
+      tdStop.textContent = `$ ${priceFmt.format(stopI)}`;
+
+      const tdOpp = document.createElement('td');
+      tdOpp.className = 'tShort';
+      tdOpp.textContent = `$ ${priceFmt.format(oppI)}`;
+
+      tr.appendChild(tdSL);
+      tr.appendChild(tdLoss);
+      tr.appendChild(tdStop);
+      tr.appendChild(tdOpp);
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById('mode').addEventListener('change', () => {
+    refreshModeUI();
+    buildAll();
+  });
+
+  document.getElementById('side').addEventListener('change', buildAll);
+
+  document.getElementById('calcBtn').addEventListener('click', buildAll);
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    document.getElementById('side').value = 'long';
+    document.getElementById('price').value = '89446.80';
+    document.getElementById('positionValue').value = '8000';
+    document.getElementById('mode').value = 'sl';
+    document.getElementById('slPct').value = '0.10';
+    document.getElementById('riskUsd').value = '8';
+
+    document.getElementById('slStartPct').value = '0.10';
+    document.getElementById('slStepPct').value = '0.01';
+    document.getElementById('rows').value = '11';
+
+    refreshModeUI();
+    buildAll();
+  });
+
+  // Init
+  refreshModeUI();
+  buildAll();
+async function loadPriceFromBinance() {
+  const symbolInput = document.getElementById('symbol');
+  const priceInput  = document.getElementById('price');
+
+  let sym = symbolInput.value.trim().toUpperCase();
+  if (!sym) {
+    alert('Ingresa un símbolo, por ejemplo: ETH, BTC, SOL');
+    return;
+  }
+
+  const pair = sym + 'USDT';
+  const url = `https://api.binance.com/api/v3/ticker/price?symbol=${pair}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Par no encontrado');
+
+    const data = await res.json();
+    const price = Number(data.price);
+
+    if (!Number.isFinite(price)) throw new Error('Precio inválido');
+
+    priceInput.value = price.toFixed(2);
+    buildAll(); // recalcula todo automáticamente
+  } catch (err) {
+    alert(`No se pudo cargar ${pair} desde Binance`);
+  }
+}
+
+document
+  .getElementById('loadPriceBtn')
+  .addEventListener('click', loadPriceFromBinance);
+
+</script>
+</body>
+</html>
